@@ -1,17 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-font1 = {'family': 'Times New Roman',
-         'weight': 'normal',
-         'size': 25,
-         }
-
-font2 = {'family': 'Times New Roman',
-         'weight': 'normal',
-         'size': 35,
-         }
-
 fig = plt.figure(figsize=(10, 10))
 sub = fig.add_subplot(111)
 
@@ -65,8 +54,8 @@ sub.text(48, 87.37, "87.4-", ha='center', va='center', fontsize=fontsize2)
 plt.grid()
 plt.tick_params(labelsize=fontsize2)
 
-plt.xlabel("k Steps", font2)
-plt.ylabel("Acc.(%)", font2)
+plt.xlabel("k Steps")
+plt.ylabel("Acc.(%)")
 
-plt.legend(handles=[l1, l2, l3], labels=['General Pre-train', 'Selective Mask', 'Random Mask'], loc='lower right', prop=font1)
+plt.legend(handles=[l1, l2, l3], labels=['General Pre-train', 'Selective Mask', 'Random Mask'], loc='lower right')
 plt.savefig("../images/mr_yelp.pdf", format="pdf")
