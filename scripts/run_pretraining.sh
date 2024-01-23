@@ -3,7 +3,7 @@ source config/bash_config.sh
 
 PER_GPU_TRN_BS=28
 LR=2e-5
-NUM_GPUS=4
+NUM_GPUS=1
 WARM_UP=0.2
 TRN_STEPS=50
 SAVE_STEPS=4
@@ -32,7 +32,7 @@ CMD+=" --warmup_proportion=$WARM_UP"
 CMD+=" --num_steps_per_checkpoint=$SAVE_STEPS"
 CMD+=" --learning_rate=$LR"
 CMD+=" --seed=$SEED"
-CMD+=" --fp16"
+#CMD+=" --fp16"
 
 export CUDA_VISIBLE_DEVICES=${E_TASKPT_GPU_LIST}
 if [ "$NUM_GPUS" -gt 1  ] ; then
@@ -43,4 +43,4 @@ fi
 
 echo ${CMD}
 
-${CMD}
+#${CMD}

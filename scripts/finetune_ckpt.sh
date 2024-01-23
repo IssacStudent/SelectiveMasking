@@ -5,7 +5,7 @@ source config/bash_config.sh
 
 DATA_DIR=${E_FINE_TUNING_DATA_DIR}
 BERT_MODEL=${E_GENEPT_BERT_MODEL}
-OUTPUT_DIR=$E_FINE_TUNING_OUTPUT_DIR}/${SEED}
+OUTPUT_DIR=$E_FINE_TUNING_OUTPUT_DIR/${SEED}
 CKPT=${E_FINE_TUNING_CKPT}
 
 CMD="finetune.py"
@@ -22,7 +22,7 @@ CMD+=" --learning_rate=2e-5"
 CMD+=" --do_lower_case"
 CMD+=" --gradient_accumulation_steps 2"
 CMD+=" --seed=${SEED}"
-CMD+=" --fp16"
+#CMD+=" --fp16"
 CMD+=" --ckpt ${CKPT}"
 
 export CUDA_VISIBLE_DEVICES=${E_FINE_TUNING_GPU_LIST}

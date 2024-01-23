@@ -20,7 +20,7 @@ CMD+=" --learning_rate=2e-5"
 CMD+=" --do_lower_case"
 CMD+=" --gradient_accumulation_steps 2"
 CMD+=" --seed=${SEED}"
-CMD+=" --fp16"
+#CMD+=" --fp16"
 
 export CUDA_VISIBLE_DEVICES=${E_SELECTIVE_MASKING_FINETUNE_BERT_GPU_LIST}
 
