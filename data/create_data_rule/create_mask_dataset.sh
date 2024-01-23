@@ -33,4 +33,4 @@ CMD="python3 ${CMD}"
 
 echo ${CMD}
 
-${CMD}
+#${CMD}
