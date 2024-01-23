@@ -17,7 +17,7 @@ from tqdm import tqdm, trange
 sys.path.append("../")
 
 import model.tokenization as tokenization
-from tokenization import BertTokenizer
+from transformers import BertTokenizer
 from data.data_utils import processors
 from data.sc_mask_gen import SC, ModelGen, ASC
 from data.rand_mask_gen import RandMask
@@ -302,7 +302,7 @@ def main():
                         type=int,
                         help="Maximum sequence length.")
     parser.add_argument("--sentence_batch_size",
-                        default=32, 
+                        default=1024,
                         type=int)
     parser.add_argument("--top_sen_rate",
                         default=0.8,

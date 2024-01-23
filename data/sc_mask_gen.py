@@ -21,7 +21,7 @@ MaskedTokenInstance = collections.namedtuple("MaskedTokenInstance", ["tokens", "
 MaskedItemInfo = collections.namedtuple("MaskedItemInfo", ["current_pos", "sen_doc_pos", "sen_right_id", "doc_ground_truth"])
 nlp = English()
 sentencizer = nlp.create_pipe("sentencizer")
-nlp.add_pipe(sentencizer)
+nlp.add_pipe("sentencizer")
 
 class InputFeatures(object):
     def __init__(self, input_ids, input_mask, segment_ids=None):
