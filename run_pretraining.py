@@ -16,24 +16,25 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, Dataset
 from torch.utils.data.distributed import DistributedSampler
 import math
-from apex import amp
+# from apex import amp
 import json
 
 from model.tokenization import BertTokenizer
 from model.modeling import BertForMaskedLM, BertConfig
-from model.optimization import BertAdam, BertAdam_FP16
+from model.optimization import BertAdam
 from model.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
 from model.schedulers import LinearWarmUpScheduler
 
-from apex.optimizers import FusedAdam
-from apex.parallel import DistributedDataParallel as DDP
+# from apex.optimizers import FusedAdam
+# from apex.parallel import DistributedDataParallel as DDP
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt = '%m/%d/%Y %H:%M:%S',
                     level = logging.INFO)
 logger = logging.getLogger(__name__)
 
-class pretraining_dataset(Dataset):
+class PretrainingDataset(Dataset):
 
     def __init__(self, input_file, max_pred_length):
         self.input_file = input_file
@@ -260,25 +261,25 @@ def main():
         {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
     ]
 
-    if args.fp16:
-        optimizer = FusedAdam(optimizer_grouped_parameters,
-                                    lr=args.learning_rate,
-                                    bias_correction=False,
-                                    weight_decay=0.01)
-
-        if args.loss_scale == 0:
-            model, optimizer = amp.initialize(model, optimizer, opt_level="O2", keep_batchnorm_fp32=False, loss_scale="dynamic")
-        else:
-            model, optimizer = amp.initialize(model, optimizer, opt_level="O2", keep_batchnorm_fp32=False, loss_scale=args.loss_scale)
-
-        scheduler = LinearWarmUpScheduler(optimizer, warmup=args.warmup_proportion, total_steps=args.max_steps)
-
-    else:
-        optimizer = BertAdam(optimizer_grouped_parameters,
-                                lr=args.learning_rate,
-                                warmup=args.warmup_proportion,
-                                t_total=args.max_steps)
-        
+    # if args.fp16:
+    #     optimizer = FusedAdam(optimizer_grouped_parameters,
+    #                                 lr=args.learning_rate,
+    #                                 bias_correction=False,
+    #                                 weight_decay=0.01)
+    #
+    #     if args.loss_scale == 0:
+    #         model, optimizer = amp.initialize(model, optimizer, opt_level="O2", keep_batchnorm_fp32=False, loss_scale="dynamic")
+    #     else:
+    #         model, optimizer = amp.initialize(model, optimizer, opt_level="O2", keep_batchnorm_fp32=False, loss_scale=args.loss_scale)
+    #
+    #     scheduler = LinearWarmUpScheduler(optimizer, warmup=args.warmup_proportion, total_steps=args.max_steps)
+    #
+    # else:
+    optimizer = BertAdam(optimizer_grouped_parameters,
+                            lr=args.learning_rate,
+                            warmup=args.warmup_proportion,
+                            t_total=args.max_steps)
+    scheduler = LinearWarmUpScheduler(optimizer, warmup=args.warmup_proportion, total_steps=args.max_steps)
     if args.resume_from_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer'])
                
@@ -293,7 +294,7 @@ def main():
     num_files = len(files)
 
     logger.info("***** Loading Dev Data *****")
-    dev_data = pretraining_dataset(input_file=os.path.join(args.input_dir, args.dev_data_file), max_pred_length=args.max_predictions_per_seq)
+    dev_data = PretrainingDataset(input_file=os.path.join(args.input_dir, args.dev_data_file), max_pred_length=args.max_predictions_per_seq)
     if args.local_rank == -1:
         dev_sampler = RandomSampler(dev_data)
         dev_dataloader = DataLoader(dev_data, sampler=dev_sampler, batch_size=args.dev_batch_size * n_gpu, num_workers=4, pin_memory=True)
@@ -325,7 +326,7 @@ def main():
         for f_id in range(f_start_id, len(files)):
             data_file = files[f_id]
             logger.info("file no {} file {}".format(f_id, data_file))
-            train_data = pretraining_dataset(input_file=data_file, max_pred_length=args.max_predictions_per_seq)
+            train_data = PretrainingDataset(input_file=data_file, max_pred_length=args.max_predictions_per_seq)
 
             if args.local_rank == -1:
                 train_sampler = RandomSampler(train_data)
@@ -346,13 +347,15 @@ def main():
                 if args.gradient_accumulation_steps > 1:
                     loss = loss / args.gradient_accumulation_steps
 
-                if args.fp16:
-                    with amp.scale_loss(loss, optimizer) as scaled_loss:
-                        scaled_loss.backward()
-                else:
-                    loss.backward()
+                # if args.fp16:
+                #     with amp.scale_loss(loss, optimizer) as scaled_loss:
+                #         scaled_loss.backward()
+                # else:
+                loss.backward()
                 tr_loss += loss.item()
                 average_loss += loss.item()
+                with open(os.path.join(args.output_dir, "loss.txt"), "a") as f:
+                    f.write(str(loss.item()) + "\n")
 
                 if training_steps % args.gradient_accumulation_steps == 0:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -377,9 +380,11 @@ def main():
                         dev_global_step = 0
                         dev_final_loss = 0.0
                         for dev_step, dev_batch in enumerate(tqdm(dev_dataloader, desc="Evaluating")):
-                            batch = [t.to(device) for t in batch]
-                            dev_input_ids, dev_segment_ids, dev_input_mask, dev_masked_lm_labels, dev_next_sentence_labels = batch
+                            dev_batch = [t.to(device) for t in dev_batch]
+                            dev_input_ids, dev_segment_ids, dev_input_mask, dev_masked_lm_labels, dev_next_sentence_labels = dev_batch
                             loss = model(input_ids=dev_input_ids, token_type_ids=dev_segment_ids, attention_mask=dev_input_mask, masked_lm_labels=dev_masked_lm_labels)
+                            if n_gpu > 1:
+                                loss = loss.mean()  # mean() to average on multi-gpu.
                             dev_final_loss += loss
                             dev_global_step += 1
                         dev_final_loss /= dev_global_step

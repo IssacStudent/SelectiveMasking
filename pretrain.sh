@@ -1,0 +1,12 @@
+CUDA_VISIBLE_DEVICES=0,1 python3 run_pretraining.py --input_dir=data/datasets/test/full_yelp/model/merged \
+--output_dir=results/test/full_yelp/model/checkpoints \
+--ckpt= \
+--bert_model=pretrain_bert_model/bert-base-uncased/ \
+--train_batch_size=24 \
+--max_seq_length=256 \
+--max_predictions_per_seq=80 \
+--max_steps=1000 \
+--warmup_proportion=0.2 \
+--num_steps_per_checkpoint=4 \
+--learning_rate=2e-5 \
+--seed=88
