@@ -23,24 +23,25 @@ for i in range(num_files):
         num_instances += num_inst
         for k in tqdm(range(num_inst), desc="loading {}".format(filename)):
             data.append({
-                "input_ids": f["input_ids"][i, :], 
-                "input_mask": f["input_mask"][i, :], 
-                "segment_ids": f["segment_ids"][i, :], 
-                "masked_lm_positions": f["masked_lm_positions"][i, :], 
-                "masked_lm_ids": f["masked_lm_ids"][i, :], 
-                "next_sentence_labels": f["next_sentence_labels"][i]
+                "input_ids": f["input_ids"][k, :],
+                "input_mask": f["input_mask"][k, :],
+                "segment_ids": f["segment_ids"][k, :],
+                "masked_lm_positions": f["masked_lm_positions"][k, :],
+                "masked_lm_ids": f["masked_lm_ids"][k, :],
+                "next_sentence_labels": f["next_sentence_labels"][k]
             })
 
 train_data = data[:int((1 - dev_rate) * num_instances)]
 dev_data = data[int((1 - dev_rate) * num_instances):]
 
 for feat, d, name in [(features_trn, train_data, "train.hdf5"), (features_dev, dev_data, "dev/dev.hdf5")]:
-    feat["input_ids"] = np.zeros([num_instances, max_seq_length], dtype="int32")
-    feat["input_mask"] = np.zeros([num_instances, max_seq_length], dtype="int32")
-    feat["segment_ids"] = np.zeros([num_instances, max_seq_length], dtype="int32")
-    feat["masked_lm_positions"] = np.zeros([num_instances, max_predictions_per_seq], dtype="int32")
-    feat["masked_lm_ids"] = np.zeros([num_instances, max_predictions_per_seq], dtype="int32")
-    feat["next_sentence_labels"] = np.zeros(num_instances, dtype="int32")
+    size = d.__len__()
+    feat["input_ids"] = np.zeros([size, max_seq_length], dtype="int32")
+    feat["input_mask"] = np.zeros([size, max_seq_length], dtype="int32")
+    feat["segment_ids"] = np.zeros([size, max_seq_length], dtype="int32")
+    feat["masked_lm_positions"] = np.zeros([size, max_predictions_per_seq], dtype="int32")
+    feat["masked_lm_ids"] = np.zeros([size, max_predictions_per_seq], dtype="int32")
+    feat["next_sentence_labels"] = np.zeros(size, dtype="int32")
 
     for i, inst in enumerate(tqdm(d, desc="train data")):
         for key in feat:
