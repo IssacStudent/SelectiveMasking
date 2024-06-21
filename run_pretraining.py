@@ -150,7 +150,7 @@ def main():
                         type=float, default=0.0,
                         help='Loss scaling, positive power of 2 values can improve fp16 convergence.')
     parser.add_argument('--log_freq',
-                        type=float, default=500,
+                        type=float, default=5,
                         help='frequency of logging loss.')
     parser.add_argument('--checkpoint_activations',
                         default=False,
@@ -339,7 +339,7 @@ def main():
                 model.train()
                 training_steps += 1
                 batch = [t.to(device) for t in batch]
-                input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch#\
+                input_ids, segment_ids, input_mask, masked_lm_labels, next_sentence_labels = batch
                 loss = model(input_ids=input_ids, token_type_ids=segment_ids, attention_mask=input_mask, masked_lm_labels=masked_lm_labels,checkpoint_activations=args.checkpoint_activations)
                 if n_gpu > 1:
                     loss = loss.mean() # mean() to average on multi-gpu.

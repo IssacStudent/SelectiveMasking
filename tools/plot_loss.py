@@ -28,7 +28,7 @@ def plot_losses(losses):
 
 def main():
     # 替换成你的文件路径
-    file_path = 'results/test/full_yelp/model/checkpoints/loss.txt'
+    file_path = './results/test/full_yelp/model/checkpoints/loss.txt'
 
     # 读取损失值并绘图
     losses = read_losses(file_path)
